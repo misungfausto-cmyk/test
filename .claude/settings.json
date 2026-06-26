@@ -1,0 +1,11 @@
+{
+  "extraKnownMarketplaces": {
+    "hello-ryan-02": {
+      "source": "github",
+      "repo": "yoonjechoi/hello-ryan-02"
+    }
+  },
+  "enabledPlugins": {
+    "brand-kit@hello-ryan-02": true
+  }
+}
