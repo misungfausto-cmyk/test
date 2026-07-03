@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#4f46e5">
+<title>나의 영어 학습</title>
+<style>
+  :root{
+    --bg:#0f172a; --panel:#1e293b; --panel2:#273449; --text:#e2e8f0; --muted:#94a3b8;
+    --brand:#6366f1; --brand2:#818cf8; --good:#22c55e; --bad:#ef4444; --warn:#f59e0b;
+    --border:#334155; --shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#f1f5f9; --panel:#ffffff; --panel2:#f8fafc; --text:#0f172a; --muted:#64748b;
+      --brand:#4f46e5; --brand2:#6366f1; --border:#e2e8f0; --shadow:0 10px 30px rgba(15,23,42,.08);
+    }
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+    background:var(--bg); color:var(--text); min-height:100vh;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  .app{width:100%; max-width:560px; padding:16px 16px 96px; flex:1}
+  header{display:flex; align-items:center; justify-content:space-between; margin:8px 2px 18px}
+  header h1{font-size:20px; margin:0; display:flex; align-items:center; gap:8px}
+  header .streak{font-size:13px; color:var(--muted); background:var(--panel); border:1px solid var(--border);
+    padding:6px 10px; border-radius:999px}
+  .card{background:var(--panel); border:1px solid var(--border); border-radius:20px; box-shadow:var(--shadow);
+    padding:22px; margin-bottom:16px}
+  h2{font-size:16px; margin:0 0 14px}
+  .muted{color:var(--muted)}
+  .row{display:flex; gap:10px}
+  .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px}
+  .stat{background:var(--panel2); border:1px solid var(--border); border-radius:14px; padding:14px 10px; text-align:center}
+  .stat b{display:block; font-size:24px}
+  .stat span{font-size:12px; color:var(--muted)}
+  button{font-family:inherit; cursor:pointer; border:none; border-radius:14px; font-size:15px; font-weight:600;
+    padding:14px 16px; transition:transform .06s ease, opacity .2s; color:#fff; background:var(--brand)}
+  button:active{transform:scale(.97)}
+  button.ghost{background:var(--panel2); color:var(--text); border:1px solid var(--border)}
+  button.wide{width:100%}
+  button.sm{padding:10px 14px; font-size:14px}
+  button:disabled{opacity:.45; cursor:default}
+  .icon-btn{background:transparent; color:var(--muted); padding:8px; font-size:20px}
+
+  /* Flashcard */
+  .flash{perspective:1200px; margin-bottom:16px}
+  .flash-inner{position:relative; width:100%; min-height:230px; transition:transform .5s; transform-style:preserve-3d}
+  .flash.flip .flash-inner{transform:rotateY(180deg)}
+  .face{position:absolute; inset:0; backface-visibility:hidden; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:10px; padding:24px; border-radius:20px;
+    background:var(--panel); border:1px solid var(--border); box-shadow:var(--shadow); text-align:center}
+  .face.back{transform:rotateY(180deg); background:linear-gradient(160deg,var(--brand),var(--brand2)); color:#fff; border:none}
+  .word{font-size:34px; font-weight:800; letter-spacing:.3px}
+  .phon{font-size:15px; color:var(--muted)}
+  .pos{font-size:12px; text-transform:uppercase; letter-spacing:1px; opacity:.8}
+  .mean{font-size:26px; font-weight:700}
+  .ex{font-size:14px; opacity:.92; line-height:1.5}
+  .tap-hint{position:absolute; bottom:12px; font-size:12px; color:var(--muted)}
+  .speak{position:absolute; top:12px; right:12px; background:rgba(255,255,255,.15); color:inherit; border-radius:999px;
+    width:40px; height:40px; padding:0; display:flex; align-items:center; justify-content:center; font-size:18px}
+  .face .speak{color:var(--brand)}
+  .face.back .speak{color:#fff}
+
+  .progress-line{height:8px; background:var(--panel2); border-radius:999px; overflow:hidden; margin:2px 0 14px; border:1px solid var(--border)}
+  .progress-line>i{display:block; height:100%; background:linear-gradient(90deg,var(--brand),var(--brand2)); width:0}
+
+  /* Quiz */
+  .opt{width:100%; text-align:left; background:var(--panel2); color:var(--text); border:2px solid var(--border);
+    margin-bottom:10px; font-weight:600}
+  .opt.correct{border-color:var(--good); background:color-mix(in srgb,var(--good) 15%,var(--panel2))}
+  .opt.wrong{border-color:var(--bad); background:color-mix(in srgb,var(--bad) 15%,var(--panel2))}
+  .opt:disabled{opacity:1}
+
+  /* Nav */
+  .nav{position:fixed; bottom:0; left:0; right:0; display:flex; justify-content:center; background:var(--panel);
+    border-top:1px solid var(--border); padding:6px 0 env(safe-area-inset-bottom)}
+  .nav .inner{display:flex; width:100%; max-width:560px}
+  .nav button{flex:1; background:transparent; color:var(--muted); border-radius:0; font-size:11px; font-weight:600;
+    display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 0}
+  .nav button .em{font-size:22px}
+  .nav button.active{color:var(--brand)}
+  .hidden{display:none!important}
+  .center{text-align:center}
+  .big-emoji{font-size:56px; margin-bottom:8px}
+  select,input{font-family:inherit; font-size:15px; padding:12px; border-radius:12px; border:1px solid var(--border);
+    background:var(--panel2); color:var(--text); width:100%}
+  label{font-size:13px; color:var(--muted); display:block; margin:12px 0 6px}
+  .word-item{display:flex; align-items:center; justify-content:space-between; padding:12px 4px; border-bottom:1px solid var(--border)}
+  .word-item:last-child{border-bottom:none}
+  .word-item .en{font-weight:700}
+  .word-item .ko{font-size:13px; color:var(--muted)}
+  .badge{font-size:11px; padding:3px 8px; border-radius:999px; background:var(--panel2); border:1px solid var(--border); color:var(--muted)}
+  .badge.mastered{color:var(--good); border-color:var(--good)}
+  .toast{position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:var(--text); color:var(--bg);
+    padding:10px 18px; border-radius:999px; font-size:14px; font-weight:600; opacity:0; transition:opacity .3s; pointer-events:none; z-index:50}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>📚 나의 영어</h1>
+    <div class="streak" id="streakBadge">🔥 0일</div>
+  </header>
+
+  <!-- ================= HOME ================= -->
+  <section id="view-home">
+    <div class="card">
+      <h2>오늘의 학습</h2>
+      <div class="progress-line"><i id="dailyBar"></i></div>
+      <div class="muted" id="dailyText" style="font-size:13px;margin-bottom:16px">오늘 0/10 단어 학습</div>
+      <div class="grid">
+        <div class="stat"><b id="statLearned">0</b><span>배운 단어</span></div>
+        <div class="stat"><b id="statMastered">0</b><span>마스터</span></div>
+        <div class="stat"><b id="statStreak">0</b><span>연속일</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>학습 세트</h2>
+      <label for="deckSel">난이도 / 주제 선택</label>
+      <select id="deckSel"></select>
+      <div class="muted" id="deckDesc" style="font-size:13px;margin:10px 2px 16px"></div>
+      <button class="wide" onclick="startStudy()">▶ 학습 시작</button>
+    </div>
+
+    <div class="card">
+      <h2>바로가기</h2>
+      <div class="row">
+        <button class="ghost wide" onclick="go('quiz')">✍️ 퀴즈</button>
+        <button class="ghost wide" onclick="go('list')">📋 단어 목록</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= STUDY ================= -->
+  <section id="view-study" class="hidden">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
+      <button class="icon-btn" onclick="go('home')">✕</button>
+      <div class="muted" id="studyCount" style="font-size:13px"></div>
+      <button class="icon-btn" onclick="shuffleStudy()">🔀</button>
+    </div>
+    <div class="progress-line"><i id="studyBar"></i></div>
+
+    <div class="flash" id="flash" onclick="flipCard()">
+      <div class="flash-inner">
+        <div class="face front">
+          <button class="speak" onclick="event.stopPropagation();speakWord()">🔊</button>
+          <div class="pos" id="fPos"></div>
+          <div class="word" id="fWord"></div>
+          <div class="phon" id="fPhon"></div>
+          <div class="tap-hint">탭하면 뜻 보기</div>
+        </div>
+        <div class="face back">
+          <button class="speak" onclick="event.stopPropagation();speakWord()">🔊</button>
+          <div class="mean" id="fMean"></div>
+          <div class="ex" id="fEx"></div>
+          <div class="tap-hint">탭하면 단어 보기</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <button class="ghost wide" onclick="rate(false)">😵 아직 몰라요</button>
+      <button class="wide" style="background:var(--good)" onclick="rate(true)">😎 알아요</button>
+    </div>
+  </section>
+
+  <!-- ================= QUIZ ================= -->
+  <section id="view-quiz" class="hidden">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
+      <button class="icon-btn" onclick="go('home')">✕</button>
+      <div class="muted" id="quizProg" style="font-size:13px"></div>
+      <div style="width:36px"></div>
+    </div>
+    <div class="progress-line"><i id="quizBar"></i></div>
+    <div class="card center" id="quizCard">
+      <div class="muted pos" id="quizPrompt">다음 뜻은?</div>
+      <div class="word" id="quizWord" style="margin:8px 0 20px"></div>
+      <div id="quizOpts"></div>
+    </div>
+    <div class="card center hidden" id="quizResult">
+      <div class="big-emoji" id="qrEmoji">🎉</div>
+      <h2 id="qrTitle">퀴즈 완료!</h2>
+      <div style="font-size:40px;font-weight:800;margin:6px 0" id="qrScore">0/0</div>
+      <div class="muted" id="qrMsg" style="margin-bottom:18px"></div>
+      <button class="wide" onclick="startQuiz()">🔁 다시 풀기</button>
+      <button class="ghost wide" style="margin-top:10px" onclick="go('home')">홈으로</button>
+    </div>
+  </section>
+
+  <!-- ================= LIST ================= -->
+  <section id="view-list" class="hidden">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h2 style="margin:0">단어 목록</h2>
+        <select id="listDeckSel" style="width:auto" onchange="renderList()"></select>
+      </div>
+      <div id="listBody"></div>
+    </div>
+  </section>
+</div>
+
+<!-- ================= NAV ================= -->
+<nav class="nav">
+  <div class="inner">
+    <button data-nav="home" class="active" onclick="go('home')"><span class="em">🏠</span>홈</button>
+    <button data-nav="study" onclick="startStudy()"><span class="em">📇</span>학습</button>
+    <button data-nav="quiz" onclick="go('quiz')"><span class="em">✍️</span>퀴즈</button>
+    <button data-nav="list" onclick="go('list')"><span class="em">📋</span>목록</button>
+  </div>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =====================================================================
+   데이터: 학습 세트 (레벨/주제별 단어)
+   각 단어: en(단어), phon(발음), pos(품사), ko(뜻), ex(예문), exKo(예문 뜻)
+   ===================================================================== */
+const DECKS = [
+  {
+    id:"basic", name:"🌱 기초 필수 단어", desc:"일상에서 가장 자주 쓰는 기본 단어들이에요.",
+    words:[
+      {en:"apple", phon:"/ˈæpl/", pos:"noun", ko:"사과", ex:"I eat an apple every morning.", exKo:"나는 매일 아침 사과를 먹는다."},
+      {en:"water", phon:"/ˈwɔːtər/", pos:"noun", ko:"물", ex:"Please give me a glass of water.", exKo:"물 한 잔 주세요."},
+      {en:"friend", phon:"/frend/", pos:"noun", ko:"친구", ex:"She is my best friend.", exKo:"그녀는 내 가장 친한 친구다."},
+      {en:"happy", phon:"/ˈhæpi/", pos:"adjective", ko:"행복한", ex:"I feel happy today.", exKo:"나는 오늘 행복하다."},
+      {en:"eat", phon:"/iːt/", pos:"verb", ko:"먹다", ex:"Let's eat lunch together.", exKo:"같이 점심 먹자."},
+      {en:"house", phon:"/haʊs/", pos:"noun", ko:"집", ex:"They live in a big house.", exKo:"그들은 큰 집에 산다."},
+      {en:"book", phon:"/bʊk/", pos:"noun", ko:"책", ex:"I read a book before bed.", exKo:"나는 자기 전에 책을 읽는다."},
+      {en:"run", phon:"/rʌn/", pos:"verb", ko:"달리다", ex:"I run in the park every day.", exKo:"나는 매일 공원에서 달린다."},
+      {en:"beautiful", phon:"/ˈbjuːtɪfl/", pos:"adjective", ko:"아름다운", ex:"What a beautiful sunset!", exKo:"정말 아름다운 노을이야!"},
+      {en:"time", phon:"/taɪm/", pos:"noun", ko:"시간", ex:"What time is it now?", exKo:"지금 몇 시야?"},
+      {en:"love", phon:"/lʌv/", pos:"verb", ko:"사랑하다", ex:"I love my family.", exKo:"나는 내 가족을 사랑한다."},
+      {en:"study", phon:"/ˈstʌdi/", pos:"verb", ko:"공부하다", ex:"I study English every night.", exKo:"나는 매일 밤 영어를 공부한다."}
+    ]
+  },
+  {
+    id:"daily", name:"🗣️ 일상 회화", desc:"실제 대화에서 바로 쓸 수 있는 표현 중심 단어예요.",
+    words:[
+      {en:"appointment", phon:"/əˈpɔɪntmənt/", pos:"noun", ko:"약속, 예약", ex:"I have a doctor's appointment at 3.", exKo:"나는 3시에 병원 예약이 있다."},
+      {en:"available", phon:"/əˈveɪləbl/", pos:"adjective", ko:"시간이 되는, 이용 가능한", ex:"Are you available tomorrow?", exKo:"내일 시간 돼?"},
+      {en:"recommend", phon:"/ˌrekəˈmend/", pos:"verb", ko:"추천하다", ex:"Can you recommend a good restaurant?", exKo:"좋은 식당 추천해 줄래?"},
+      {en:"actually", phon:"/ˈæktʃuəli/", pos:"adverb", ko:"사실은", ex:"Actually, I changed my mind.", exKo:"사실, 나 마음이 바뀌었어."},
+      {en:"complain", phon:"/kəmˈpleɪn/", pos:"verb", ko:"불평하다", ex:"He always complains about work.", exKo:"그는 항상 일에 대해 불평한다."},
+      {en:"convenient", phon:"/kənˈviːniənt/", pos:"adjective", ko:"편리한", ex:"This app is very convenient.", exKo:"이 앱은 아주 편리하다."},
+      {en:"decide", phon:"/dɪˈsaɪd/", pos:"verb", ko:"결정하다", ex:"I can't decide what to eat.", exKo:"뭘 먹을지 못 정하겠어."},
+      {en:"borrow", phon:"/ˈbɒrəʊ/", pos:"verb", ko:"빌리다", ex:"Can I borrow your pen?", exKo:"펜 좀 빌릴 수 있을까?"},
+      {en:"probably", phon:"/ˈprɒbəbli/", pos:"adverb", ko:"아마도", ex:"I'll probably be late.", exKo:"나 아마 늦을 것 같아."},
+      {en:"expensive", phon:"/ɪkˈspensɪv/", pos:"adjective", ko:"비싼", ex:"This bag is too expensive.", exKo:"이 가방은 너무 비싸다."},
+      {en:"remember", phon:"/rɪˈmembər/", pos:"verb", ko:"기억하다", ex:"Do you remember my name?", exKo:"내 이름 기억해?"},
+      {en:"weather", phon:"/ˈweðər/", pos:"noun", ko:"날씨", ex:"The weather is nice today.", exKo:"오늘 날씨가 좋다."}
+    ]
+  },
+  {
+    id:"business", name:"💼 비즈니스 영어", desc:"이메일, 회의, 업무에서 쓰는 실무 단어예요.",
+    words:[
+      {en:"schedule", phon:"/ˈskedʒuːl/", pos:"noun", ko:"일정", ex:"Let's check the schedule.", exKo:"일정을 확인해 봅시다."},
+      {en:"deadline", phon:"/ˈdedlaɪn/", pos:"noun", ko:"마감일", ex:"The deadline is next Friday.", exKo:"마감일은 다음 주 금요일이다."},
+      {en:"meeting", phon:"/ˈmiːtɪŋ/", pos:"noun", ko:"회의", ex:"We have a meeting at 10 a.m.", exKo:"우리는 오전 10시에 회의가 있다."},
+      {en:"colleague", phon:"/ˈkɒliːɡ/", pos:"noun", ko:"동료", ex:"My colleague helped me a lot.", exKo:"내 동료가 나를 많이 도와줬다."},
+      {en:"proposal", phon:"/prəˈpəʊzl/", pos:"noun", ko:"제안(서)", ex:"Please review my proposal.", exKo:"제 제안서를 검토해 주세요."},
+      {en:"confirm", phon:"/kənˈfɜːrm/", pos:"verb", ko:"확인하다", ex:"Please confirm your attendance.", exKo:"참석 여부를 확인해 주세요."},
+      {en:"attach", phon:"/əˈtætʃ/", pos:"verb", ko:"첨부하다", ex:"I attached the file to the email.", exKo:"이메일에 파일을 첨부했습니다."},
+      {en:"budget", phon:"/ˈbʌdʒɪt/", pos:"noun", ko:"예산", ex:"We are over budget this month.", exKo:"이번 달 예산을 초과했다."},
+      {en:"client", phon:"/ˈklaɪənt/", pos:"noun", ko:"고객, 거래처", ex:"The client is very satisfied.", exKo:"고객이 매우 만족하고 있다."},
+      {en:"increase", phon:"/ɪnˈkriːs/", pos:"verb", ko:"증가하다", ex:"Sales increased last quarter.", exKo:"지난 분기에 매출이 증가했다."},
+      {en:"efficient", phon:"/ɪˈfɪʃnt/", pos:"adjective", ko:"효율적인", ex:"This is a more efficient method.", exKo:"이것이 더 효율적인 방법이다."},
+      {en:"negotiate", phon:"/nɪˈɡəʊʃieɪt/", pos:"verb", ko:"협상하다", ex:"We need to negotiate the price.", exKo:"우리는 가격을 협상해야 한다."}
+    ]
+  },
+  {
+    id:"travel", name:"✈️ 여행 영어", desc:"공항, 호텔, 관광지에서 쓰는 필수 표현이에요.",
+    words:[
+      {en:"reservation", phon:"/ˌrezərˈveɪʃn/", pos:"noun", ko:"예약", ex:"I have a reservation under Kim.", exKo:"김으로 예약이 되어 있어요."},
+      {en:"luggage", phon:"/ˈlʌɡɪdʒ/", pos:"noun", ko:"짐, 수하물", ex:"Where can I get my luggage?", exKo:"짐을 어디서 찾나요?"},
+      {en:"departure", phon:"/dɪˈpɑːrtʃər/", pos:"noun", ko:"출발", ex:"The departure gate is B12.", exKo:"출발 게이트는 B12입니다."},
+      {en:"delay", phon:"/dɪˈleɪ/", pos:"noun", ko:"지연", ex:"The flight has a two-hour delay.", exKo:"항공편이 2시간 지연됐다."},
+      {en:"passport", phon:"/ˈpæspɔːrt/", pos:"noun", ko:"여권", ex:"Can I see your passport?", exKo:"여권을 볼 수 있을까요?"},
+      {en:"direction", phon:"/dəˈrekʃn/", pos:"noun", ko:"방향, 길", ex:"Could you give me directions?", exKo:"길 좀 알려 주시겠어요?"},
+      {en:"currency", phon:"/ˈkɜːrənsi/", pos:"noun", ko:"통화, 화폐", ex:"Where can I exchange currency?", exKo:"환전은 어디서 하나요?"},
+      {en:"nearby", phon:"/ˌnɪrˈbaɪ/", pos:"adjective", ko:"근처의", ex:"Is there a pharmacy nearby?", exKo:"근처에 약국이 있나요?"},
+      {en:"cancel", phon:"/ˈkænsl/", pos:"verb", ko:"취소하다", ex:"I need to cancel my booking.", exKo:"예약을 취소해야 해요."},
+      {en:"ticket", phon:"/ˈtɪkɪt/", pos:"noun", ko:"표, 티켓", ex:"I lost my train ticket.", exKo:"기차표를 잃어버렸어요."},
+      {en:"tourist", phon:"/ˈtʊrɪst/", pos:"noun", ko:"관광객", ex:"This area is full of tourists.", exKo:"이 지역은 관광객으로 가득하다."},
+      {en:"recommend", phon:"/ˌrekəˈmend/", pos:"verb", ko:"추천하다", ex:"What do you recommend here?", exKo:"여기 뭐가 맛있어요(추천해요)?"}
+    ]
+  }
+];
+
+/* =====================================================================
+   상태 관리 (localStorage 영구 저장)
+   ===================================================================== */
+const STORE_KEY = "myEnglishApp_v1";
+const DAILY_GOAL = 10;
+let state = load();
+
+function load(){
+  try{
+    const s = JSON.parse(localStorage.getItem(STORE_KEY));
+    if(s) return s;
+  }catch(e){}
+  return {
+    progress:{},        // key: deckId::en -> {box:1..5, seen:n, correct:n}
+    lastStudyDate:null,
+    streak:0,
+    todayCount:0,
+    todayDate:null,
+    selectedDeck:DECKS[0].id
+  };
+}
+function save(){ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+
+function wordKey(deckId, en){ return deckId+"::"+en; }
+function getWordProg(deckId, en){
+  const k = wordKey(deckId, en);
+  if(!state.progress[k]) state.progress[k] = {box:1, seen:0, correct:0};
+  return state.progress[k];
+}
+
+function todayStr(){ const d=new Date(); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
+
+function checkStreak(){
+  const t = todayStr();
+  if(state.todayDate !== t){
+    // 새 날: 오늘 카운트 리셋
+    state.todayCount = 0;
+    state.todayDate = t;
+  }
+  save();
+}
+
+function registerStudyDay(){
+  const t = todayStr();
+  if(state.lastStudyDate === t) return; // 오늘 이미 반영됨
+  // 어제였으면 연속, 아니면 리셋
+  const y = new Date(); y.setDate(y.getDate()-1);
+  const yStr = y.getFullYear()+"-"+(y.getMonth()+1)+"-"+y.getDate();
+  if(state.lastStudyDate === yStr) state.streak += 1;
+  else state.streak = 1;
+  state.lastStudyDate = t;
+  save();
+}
+
+/* =====================================================================
+   화면 전환
+   ===================================================================== */
+function go(view){
+  checkStreak();
+  document.querySelectorAll('section[id^="view-"]').forEach(s=>s.classList.add('hidden'));
+  document.getElementById('view-'+view).classList.remove('hidden');
+  document.querySelectorAll('.nav button[data-nav]').forEach(b=>{
+    b.classList.toggle('active', b.dataset.nav===view);
+  });
+  if(view==='home') renderHome();
+  if(view==='quiz') startQuiz();
+  if(view==='list') renderList();
+  window.scrollTo(0,0);
+}
+
+/* =====================================================================
+   홈
+   ===================================================================== */
+function renderHome(){
+  checkStreak();
+  const learned = Object.values(state.progress).filter(p=>p.seen>0).length;
+  const mastered = Object.values(state.progress).filter(p=>p.box>=5).length;
+  document.getElementById('statLearned').textContent = learned;
+  document.getElementById('statMastered').textContent = mastered;
+  document.getElementById('statStreak').textContent = state.streak;
+  document.getElementById('streakBadge').textContent = "🔥 "+state.streak+"일";
+
+  const pct = Math.min(100, Math.round(state.todayCount/DAILY_GOAL*100));
+  document.getElementById('dailyBar').style.width = pct+"%";
+  document.getElementById('dailyText').textContent =
+    "오늘 "+Math.min(state.todayCount,DAILY_GOAL)+"/"+DAILY_GOAL+" 단어 학습"+(state.todayCount>=DAILY_GOAL?" ✅ 목표 달성!":"");
+
+  const desc = DECKS.find(d=>d.id===state.selectedDeck)?.desc || "";
+  document.getElementById('deckDesc').textContent = desc;
+}
+
+function fillDeckSelect(sel, withProgress){
+  sel.innerHTML = "";
+  DECKS.forEach(d=>{
+    const o = document.createElement('option');
+    o.value = d.id;
+    let done = "";
+    if(withProgress){
+      const m = d.words.filter(w=>getWordProg(d.id,w.en).box>=5).length;
+      done = " ("+m+"/"+d.words.length+")";
+    }
+    o.textContent = d.name + done;
+    sel.appendChild(o);
+  });
+}
+
+/* =====================================================================
+   학습 (플래시카드 + 라이트너 간격반복)
+   ===================================================================== */
+let studyQueue=[], studyIdx=0, studyDeck=null, isFlipped=false;
+
+function startStudy(){
+  state.selectedDeck = document.getElementById('deckSel').value || state.selectedDeck;
+  save();
+  studyDeck = DECKS.find(d=>d.id===state.selectedDeck);
+  // 간격반복: box가 낮은(덜 익힌) 단어 우선 정렬
+  studyQueue = [...studyDeck.words].sort((a,b)=>{
+    return getWordProg(studyDeck.id,a.en).box - getWordProg(studyDeck.id,b.en).box;
+  });
+  studyIdx = 0;
+  go('study');
+  showCard();
+}
+
+function shuffleStudy(){
+  for(let i=studyQueue.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [studyQueue[i],studyQueue[j]]=[studyQueue[j],studyQueue[i]];
+  }
+  studyIdx=0; showCard(); toast("🔀 섞었어요");
+}
+
+function showCard(){
+  if(studyIdx>=studyQueue.length){ finishStudy(); return; }
+  const w = studyQueue[studyIdx];
+  isFlipped=false;
+  document.getElementById('flash').classList.remove('flip');
+  document.getElementById('fWord').textContent = w.en;
+  document.getElementById('fPhon').textContent = w.phon;
+  document.getElementById('fPos').textContent = w.pos;
+  document.getElementById('fMean').textContent = w.ko;
+  document.getElementById('fEx').innerHTML = "“"+w.ex+"”<br><span style='opacity:.75;font-size:13px'>"+w.exKo+"</span>";
+  const box = getWordProg(studyDeck.id,w.en).box;
+  document.getElementById('studyCount').textContent = (studyIdx+1)+" / "+studyQueue.length+" · "+"⭐".repeat(box);
+  document.getElementById('studyBar').style.width = (studyIdx/studyQueue.length*100)+"%";
+}
+
+function flipCard(){
+  isFlipped=!isFlipped;
+  document.getElementById('flash').classList.toggle('flip', isFlipped);
+}
+
+function rate(known){
+  const w = studyQueue[studyIdx];
+  const p = getWordProg(studyDeck.id,w.en);
+  p.seen++;
+  if(known){ p.box=Math.min(5,p.box+1); p.correct++; }
+  else { p.box=Math.max(1,p.box-1); }
+
+  // 오늘 학습 카운트 (처음 본 단어 위주로 증가하지 않고, 상호작용마다 최대 목표까지)
+  state.todayCount++;
+  registerStudyDay();
+  save();
+
+  studyIdx++;
+  showCard();
+}
+
+function finishStudy(){
+  document.getElementById('studyBar').style.width="100%";
+  const mastered = studyDeck.words.filter(w=>getWordProg(studyDeck.id,w.en).box>=5).length;
+  const view = document.getElementById('view-study');
+  view.innerHTML = `
+    <div class="card center" style="margin-top:40px">
+      <div class="big-emoji">🎊</div>
+      <h2>학습 완료!</h2>
+      <div class="muted" style="margin-bottom:6px">${studyDeck.name}</div>
+      <div style="font-size:36px;font-weight:800;margin:8px 0">${mastered} / ${studyDeck.words.length}</div>
+      <div class="muted" style="margin-bottom:20px">단어를 마스터했어요 ⭐</div>
+      <button class="wide" onclick="startStudy()">🔁 다시 학습</button>
+      <button class="ghost wide" style="margin-top:10px" onclick="location.reload()">🏠 홈으로</button>
+    </div>`;
+  toast("🎉 오늘도 수고했어요!");
+}
+
+function speakWord(){
+  const w = studyQueue[studyIdx];
+  if(!w) return;
+  speak(w.en);
+}
+function speak(text){
+  try{
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang="en-US"; u.rate=.9;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+  }catch(e){ toast("이 브라우저는 발음을 지원하지 않아요"); }
+}
+
+/* =====================================================================
+   퀴즈
+   ===================================================================== */
+let quizWords=[], quizIdx=0, quizScore=0, quizDeck=null;
+
+function startQuiz(){
+  quizDeck = DECKS.find(d=>d.id===state.selectedDeck) || DECKS[0];
+  quizWords = [...quizDeck.words].sort(()=>Math.random()-.5).slice(0, Math.min(8, quizDeck.words.length));
+  quizIdx=0; quizScore=0;
+  document.getElementById('quizResult').classList.add('hidden');
+  document.getElementById('quizCard').classList.remove('hidden');
+  showQuiz();
+}
+
+function showQuiz(){
+  if(quizIdx>=quizWords.length){ finishQuiz(); return; }
+  const w = quizWords[quizIdx];
+  document.getElementById('quizProg').textContent = (quizIdx+1)+" / "+quizWords.length;
+  document.getElementById('quizBar').style.width = (quizIdx/quizWords.length*100)+"%";
+  document.getElementById('quizWord').textContent = w.en;
+  // 오답 보기: 같은 덱 + 다른 덱에서 랜덤
+  const pool = DECKS.flatMap(d=>d.words).filter(x=>x.ko!==w.ko);
+  const wrong = pool.sort(()=>Math.random()-.5).slice(0,3).map(x=>x.ko);
+  const opts = [w.ko, ...wrong].sort(()=>Math.random()-.5);
+  const box = document.getElementById('quizOpts');
+  box.innerHTML="";
+  opts.forEach(opt=>{
+    const b=document.createElement('button');
+    b.className="opt"; b.textContent=opt;
+    b.onclick=()=>answer(b, opt===w.ko, w.ko);
+    box.appendChild(b);
+  });
+}
+
+function answer(btn, correct, correctKo){
+  const btns = document.querySelectorAll('#quizOpts .opt');
+  btns.forEach(b=>{
+    b.disabled=true;
+    if(b.textContent===correctKo) b.classList.add('correct');
+  });
+  if(correct){ quizScore++; }
+  else { btn.classList.add('wrong'); }
+  // 진도에 반영
+  const w = quizWords[quizIdx];
+  const p = getWordProg(quizDeck.id, w.en);
+  p.seen++;
+  if(correct){ p.correct++; p.box=Math.min(5,p.box+1); } else { p.box=Math.max(1,p.box-1); }
+  state.todayCount++;
+  registerStudyDay();
+  save();
+  setTimeout(()=>{ quizIdx++; showQuiz(); }, 800);
+}
+
+function finishQuiz(){
+  document.getElementById('quizCard').classList.add('hidden');
+  const r = document.getElementById('quizResult');
+  r.classList.remove('hidden');
+  document.getElementById('quizBar').style.width="100%";
+  document.getElementById('quizProg').textContent="완료";
+  const total = quizWords.length;
+  const pct = Math.round(quizScore/total*100);
+  document.getElementById('qrScore').textContent = quizScore+"/"+total;
+  let emoji, msg;
+  if(pct===100){ emoji="🏆"; msg="완벽해요! 대단해요 👏"; }
+  else if(pct>=70){ emoji="🎉"; msg="잘했어요! 조금만 더 연습해요."; }
+  else if(pct>=40){ emoji="💪"; msg="좋아요, 반복하면 금방 늘어요."; }
+  else { emoji="🌱"; msg="괜찮아요! 다시 학습해 봐요."; }
+  document.getElementById('qrEmoji').textContent=emoji;
+  document.getElementById('qrMsg').textContent=msg;
+}
+
+/* =====================================================================
+   단어 목록
+   ===================================================================== */
+function renderList(){
+  const sel = document.getElementById('listDeckSel');
+  if(!sel.value) sel.value = state.selectedDeck;
+  const deck = DECKS.find(d=>d.id===sel.value) || DECKS[0];
+  const body = document.getElementById('listBody');
+  body.innerHTML="";
+  deck.words.forEach(w=>{
+    const p = getWordProg(deck.id, w.en);
+    const row = document.createElement('div');
+    row.className="word-item";
+    row.innerHTML = `
+      <div>
+        <div class="en">${w.en} <span class="muted" style="font-weight:400;font-size:13px">${w.phon}</span></div>
+        <div class="ko">${w.ko}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="icon-btn" onclick="speak('${w.en}')">🔊</button>
+        <span class="badge ${p.box>=5?'mastered':''}">${p.box>=5?'마스터':'⭐'+p.box}</span>
+      </div>`;
+    body.appendChild(row);
+  });
+}
+
+/* =====================================================================
+   토스트
+   ===================================================================== */
+let toastTimer;
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),1800);
+}
+
+/* =====================================================================
+   초기화
+   ===================================================================== */
+function init(){
+  checkStreak();
+  fillDeckSelect(document.getElementById('deckSel'), true);
+  fillDeckSelect(document.getElementById('listDeckSel'), false);
+  document.getElementById('deckSel').value = state.selectedDeck;
+  document.getElementById('deckSel').onchange = e=>{
+    state.selectedDeck=e.target.value; save(); renderHome();
+  };
+  renderHome();
+}
+init();
+</script>
+</body>
+</html>
